@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validate Water Quality Data</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <style>
+        .validation-card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: none;
+            margin-bottom: 1.5rem;
+        }
+        .data-row {
+            transition: all 0.3s ease;
+        }
+        .data-row:hover {
+            background-color: #f8f9fa;
+        }
+        .validation-actions {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .data-row:hover .validation-actions {
+            opacity: 1;
+        }
+        .metamask-status {
+            background: linear-gradient(135deg, #0d6efd, #6610f2);
+            color: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        .wallet-info {
+            background: rgba(13, 110, 253, 0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" width="40" height="40" class="rounded-circle me-2">
+                <span class="fw-bold text-primary">Water Quality Management System</span>
+            </a>
+            
+            <div class="d-flex align-items-center">
+                <span class="me-3">Welcome, {{ session.username }} (Government Validator)</span>
+                <button class="btn btn-outline-primary me-2 connect-wallet-btn" onclick="connectWallet()">
+                    <i class="bi bi-wallet2 me-2"></i>Connect Wallet
+                </button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                </a>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary">
+                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- MetaMask Status -->
+        <div class="row">
+            <div class="col-12">
+                <div class="metamask-status">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5 class="mb-1">
+                                <i class="bi bi-shield-check me-2"></i>
+                                Blockchain Integration
+                            </h5>
+                            <p class="mb-0">Secure validation and incentive distribution</p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="wallet-info">
+                                <div class="d-flex justify-content-between">
+                                    <span>Wallet:</span>
+                                    <span class="wallet-address">Not Connected</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Network:</span>
+                                    <span class="network-status">Not Connected</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Balance:</span>
+                                    <span class="wallet-balance">0 ETH</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Validation Queue -->
+        <div class="row">
+            <div class="col-12">
+                <div class="validation-card card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-clipboard-check me-2"></i>
+                            Validation Queue
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        {% if water_data %}
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>User</th>
+                                            <th>pH Level</th>
+                                            <th>Color</th>
+                                            <th>Acidity (mg/L)</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for data in water_data %}
+                                        <tr class="data-row" data-id="{{ data.id }}">
+                                            <td>{{ data.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                            <td>{{ data.user.username }}</td>
+                                            <td>{{ "%.2f"|format(data.ph) }}</td>
+                                            <td>{{ data.color|title }}</td>
+                                            <td>{{ "%.2f"|format(data.acidity) }}</td>
+                                            <td>
+                                                {% if data.validated %}
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-check-circle me-1"></i>Validated
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">
+                                                        <i class="bi bi-clock me-1"></i>Pending
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="validation-actions">
+                                                {% if not data.validated %}
+                                                <button class="btn btn-success validate-btn" data-id="{{ data.id }}" data-action="approve">
+                                                    <i class="bi bi-check-circle"></i> Approve (0.0001 ETH)
+                                                </button>
+                                                <button class="btn btn-danger validate-btn" data-id="{{ data.id }}" data-action="reject">
+                                                    <i class="bi bi-x-circle"></i> Reject (0.0005 ETH)
+                                                </button>
+                                                {% else %}
+                                                    <span class="text-muted">Already validated</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-clipboard-check text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3 text-muted">No pending validations</h5>
+                                <p class="text-muted">New submissions will appear here for validation</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Validation Modal -->
+    <div class="modal fade" id="validationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Validation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to <span id="validationAction">validate</span> this submission?</p>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        This action will be recorded on the blockchain and cannot be undone.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmValidation">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='blockchain.js') }}"></script>
+    <script>
+        let currentDataId = null;
+        let isApproval = true;
+        const validationModal = new bootstrap.Modal(document.getElementById('validationModal'));
+
+        async function validateData(dataId, isApproval) {
+            currentDataId = dataId;
+            isApproval = isApproval;
+            
+            // Update modal content
+            document.getElementById('validationAction').textContent = isApproval ? 'approve' : 'reject';
+            document.getElementById('validationAction').className = isApproval ? 'text-success' : 'text-danger';
+            document.getElementById('confirmValidation').className = isApproval ? 'btn btn-success' : 'btn btn-danger';
+            
+            validationModal.show();
+        }
+
+        document.getElementById('confirmValidation').addEventListener('click', async function() {
+            try {
+                // Show loading state
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+                
+                // Submit validation
+                const response = await fetch('/validate_with_metamask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        data_id: currentDataId,
+                        is_approved: isApproval
+                    })
+                });
+                
+                if (response.ok) {
+                    // Update UI
+                    const row = document.querySelector(`tr[data-id="${currentDataId}"]`);
+                    row.querySelector('.validation-actions').innerHTML = '<span class="text-success">Validated</span>';
+                    row.querySelector('td:nth-last-child(2)').innerHTML = `
+                        <span class="badge bg-success">
+                            <i class="bi bi-check-circle me-1"></i>Validated
+                        </span>
+                    `;
+                    
+                    // Show success message
+                    alert('Validation successful!');
+                } else {
+                    throw new Error('Validation failed');
+                }
+                
+            } catch (error) {
+                console.error('Validation error:', error);
+                alert('Error during validation: ' + error.message);
+            } finally {
+                // Reset button
+                this.disabled = false;
+                this.innerHTML = 'Confirm';
+                validationModal.hide();
+            }
+        });
+
+        // Connect wallet functionality
+        async function connectWallet() {
+            try {
+                if (typeof window.ethereum !== 'undefined') {
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    const account = accounts[0];
+                    
+                    // Update UI
+                    document.querySelector('.wallet-address').textContent = 
+                        account.slice(0, 6) + '...' + account.slice(-4);
+                    document.querySelector('.network-status').textContent = 'Connected';
+                    
+                    // Get balance
+                    const balance = await window.ethereum.request({
+                        method: 'eth_getBalance',
+                        params: [account, 'latest']
+                    });
+                    const ethBalance = parseInt(balance, 16) / 1e18;
+                    document.querySelector('.wallet-balance').textContent = 
+                        ethBalance.toFixed(4) + ' ETH';
+                    
+                    // Update button
+                    const connectBtn = document.querySelector('.connect-wallet-btn');
+                    connectBtn.innerHTML = '<i class="bi bi-wallet2 me-2"></i>Connected';
+                    connectBtn.disabled = true;
+                    
+                } else {
+                    throw new Error('MetaMask not installed');
+                }
+            } catch (error) {
+                console.error('Wallet connection error:', error);
+                alert('Error connecting wallet: ' + error.message);
+            }
+        }
+
+        
+        // Add this to your validate_data.html
+    async function validateWithMetaMask(dataId, isApproved) {
+      try {
+        // Check if MetaMask is installed
+        if (typeof window.ethereum === 'undefined') {
+            alert('Please install MetaMask to validate data');
+            return;
+        }
+
+        // Request account access
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const validatorAddress = accounts[0];
+
+        // Get transaction details from server
+        const response = await fetch('/validate_with_metamask', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                data_id: dataId,
+                is_approved: isApproved,
+                validator_address: validatorAddress
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.error) {
+            alert(result.error);
+            return;
+        }
+
+        // Send transaction through MetaMask
+        const tx = result.transaction;
+        const txHash = await window.ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [{
+                from: validatorAddress,
+                to: tx.to,
+                value: tx.value,
+                data: tx.data
+            }]
+        });
+
+        // Update transaction status
+        await fetch('/update_transaction_status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                transaction_id: tx.transaction_id,
+                tx_hash: txHash,
+                status: 'completed'
+            })
+        });
+
+        // Update UI
+        alert(`Transaction successful! Hash: ${txHash}`);
+        location.reload();
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Transaction failed: ' + error.message);
+    }
+}
+
+    </script>
+    <script>
+        document.querySelectorAll('.validate-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const dataId = this.dataset.id;
+                const isApproved = this.dataset.action === 'approve';
+                validateWithMetaMask(dataId, isApproved);
+            });
+        });
+        </script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Water Quality Data</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .data-card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: none;
+            margin-bottom: 1.5rem;
+        }
+        .status-badge {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+        }
+        .transaction-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" width="40" height="40" class="rounded-circle me-2">
+                <span class="fw-bold text-primary">Water Quality Management System</span>
+            </a>
+            
+            <div class="d-flex align-items-center">
+                <span class="me-3">Welcome, {{ session.username }}</span>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                </a>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary">
+                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Water Quality Data Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="data-card card">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="bi bi-droplet me-2"></i>
+                            Your Water Quality Submissions
+                        </h4>
+                        <a href="{{ url_for('create_water_data') }}" class="btn btn-light">
+                            <i class="bi bi-plus-circle me-2"></i>New Submission
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        {% if water_data %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>pH Level</th>
+                                            <th>Color</th>
+                                            <th>Acidity (mg/L)</th>
+                                            <th>Status</th>
+                                            <th>Validation Type</th>
+                                            <th>Validated By</th>
+                                            <th>Validation Time</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for data in water_data %}
+                                        <tr>
+                                            <td>{{ data.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                            <td>{{ "%.2f"|format(data.ph) }}</td>
+                                            <td>{{ data.color|title }}</td>
+                                            <td>{{ "%.2f"|format(data.acidity) }}</td>
+                                            <td>
+                                                {% if data.validated %}
+                                                    <span class="badge bg-success status-badge">
+                                                        <i class="bi bi-check-circle me-1"></i>Validated
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-warning status-badge">
+                                                        <i class="bi bi-clock me-1"></i>Pending
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if data.validated and data.transactions %}
+                                                    {% set tx = data.transactions[0] %}
+                                                    {% if tx.transaction_type == 'incentive' %}
+                                                        <span class="badge bg-success">
+                                                            <i class="bi bi-plus-circle me-1"></i>Incentive (+0.0001 ETH)
+                                                        </span>
+                                                    {% elif tx.transaction_type == 'penalty' %}
+                                                        <span class="badge bg-danger">
+                                                            <i class="bi bi-dash-circle me-1"></i>Penalty (-0.0005 ETH)
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-info">
+                                                            <i class="bi bi-check-circle me-1"></i>Validated
+                                                        </span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if data.validator_id %}
+                                                    {{ validator_usernames.get(data.validator_id, 'Unknown') }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if data.validation_timestamp %}
+                                                    {{ data.validation_timestamp.strftime('%Y-%m-%d %H:%M') }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3 text-muted">No water quality data submitted yet</h5>
+                                <a href="{{ url_for('create_water_data') }}" class="btn btn-primary mt-3">
+                                    <i class="bi bi-plus-circle me-2"></i>Submit Your First Data
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction History Section -->
+        <div class="row">
+            <div class="col-12">
+                <div class="data-card card">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-wallet2 me-2"></i>
+                            Transaction History
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        {% if transactions %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Type</th>
+                                            <th>Amount (ETH)</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for tx in transactions %}
+                                        <tr>
+                                            <td>{{ tx.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                            <td>
+                                                {% if tx.transaction_type == 'incentive' %}
+                                                    <span class="badge bg-success">Incentive</span>
+                                                {% elif tx.transaction_type == 'penalty' %}
+                                                    <span class="badge bg-danger">Penalty</span>
+                                                {% elif tx.transaction_type == 'validation' %}
+                                                    <span class="badge bg-info">Validation</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ tx.transaction_type|title }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ "%.8f"|format(tx.amount) }}</td>
+                                            <td>
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle me-1"></i>Completed
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-wallet2 text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3 text-muted">No transactions yet</h5>
+                                <p class="text-muted">Transactions will appear here when your data is validated</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

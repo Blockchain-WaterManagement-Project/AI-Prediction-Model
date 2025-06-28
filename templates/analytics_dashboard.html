@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+    <style>
+        .analytics-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            color: rgb(51, 20, 205);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .analytics-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .metric-card {
+            background: white;
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-3px);
+        }
+        .chart-container {
+            background: rgb(36, 13, 168);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-excellent { background-color: #28a745; }
+        .status-good { background-color: #17a2b8; }
+        .status-warning { background-color: #ffc107; }
+        .status-danger { background-color: #dc3545; }
+        .trend-up { color: #28a745; }
+        .trend-down { color: #dc3545; }
+        .sidebar {
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            min-height: 100vh;
+            color: rgb(38, 10, 150);
+        }
+        .sidebar .nav-link {
+            color: rgba(57, 13, 146, 0.8);
+            border-radius: 10px;
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: rgba(255,255,255,0.1);
+            color: rgb(40, 16, 136);
+        }
+        .main-content {
+            background-color: #2c1abc;
+            min-height: 100vh;
+        }
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: rgb(54, 40, 181);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-0">
+                <div class="p-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="AquaTrack" class="rounded-circle me-2" width="40" height="40">
+                        <h5 class="mb-0">Water Quality Management System</h5>
+                    </div>
+                    <nav class="nav flex-column">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                        </a>
+                        <a class="nav-link active" href="{{ url_for('analytics_dashboard') }}">
+                            <i class="bi bi-graph-up me-2"></i>Analytics
+                        </a>
+                        <a class="nav-link" href="{{ url_for('predict_quality') }}">
+                            <i class="bi bi-cpu me-2"></i>AI Prediction
+                        </a>
+                        <a class="nav-link" href="{{ url_for('water_supply') }}">
+                            <i class="bi bi-droplet me-2"></i>Water Supply
+                        </a>
+                        <a class="nav-link" href="{{ url_for('water_demand') }}">
+                            <i class="bi bi-bar-chart me-2"></i>Water Demand
+                        </a>
+                        <a class="nav-link" href="{{ url_for('water_consumers') }}">
+                            <i class="bi bi-people me-2"></i>Consumers
+                        </a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 main-content p-4">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h1 class="mb-2"><i class="bi bi-graph-up me-3"></i>Water Quality Analytics</h1>
+                            <p class="mb-0 opacity-75">Comprehensive insights and data analysis for water quality management</p>
+                        </div>
+                        <div class="col-auto">
+                            <div class="text-end">
+                                <small class="opacity-75">Last Updated</small>
+                                <div id="lastUpdated"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Metrics Row -->
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card metric-card h-100">
+                            <div class="card-body text-center">
+                                <div class="display-6 text-primary mb-2">
+                                    <i class="bi bi-droplet-fill"></i>
+                                </div>
+                                <h3 class="text-primary mb-1" id="totalSamples">1,247</h3>
+                                <p class="text-muted mb-1">Total Samples</p>
+                                <small class="text-success">
+                                    <i class="bi bi-arrow-up trend-up"></i> +12% this month
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card metric-card h-100">
+                            <div class="card-body text-center">
+                                <div class="display-6 text-success mb-2">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </div>
+                                <h3 class="text-success mb-1" id="potableSamples">892</h3>
+                                <p class="text-muted mb-1">Potable Water</p>
+                                <small class="text-success">
+                                    <i class="bi bi-arrow-up trend-up"></i> 71.5% quality rate
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card metric-card h-100">
+                            <div class="card-body text-center">
+                                <div class="display-6 text-warning mb-2">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                </div>
+                                <h3 class="text-warning mb-1" id="nonPotableSamples">355</h3>
+                                <p class="text-muted mb-1">Non-Potable</p>
+                                <small class="text-danger">
+                                    <i class="bi bi-arrow-down trend-down"></i> 28.5% needs treatment
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card metric-card h-100">
+                            <div class="card-body text-center">
+                                <div class="display-6 text-info mb-2">
+                                    <i class="bi bi-cpu-fill"></i>
+                                </div>
+                                <h3 class="text-info mb-1" id="avgAccuracy">94.2%</h3>
+                                <p class="text-muted mb-1">AI Accuracy</p>
+                                <small class="text-success">
+                                    <i class="bi bi-arrow-up trend-up"></i> +2.1% improvement
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="row mb-4">
+                    <!-- Water Quality Trends -->
+                    <div class="col-md-8 mb-4">
+                        <div class="chart-container">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Water Quality Trends</h5>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary active" onclick="updateTrendChart('7d')">7D</button>
+                                    <button type="button" class="btn btn-outline-primary" onclick="updateTrendChart('30d')">30D</button>
+                                    <button type="button" class="btn btn-outline-primary" onclick="updateTrendChart('90d')">90D</button>
+                                </div>
+                            </div>
+                            <canvas id="qualityTrendChart" height="100"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Quality Distribution -->
+                    <div class="col-md-4 mb-4">
+                        <div class="chart-container">
+                            <h5 class="mb-3"><i class="bi bi-pie-chart me-2"></i>Quality Distribution</h5>
+                            <canvas id="qualityDistributionChart"></canvas>
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span><span class="status-indicator status-excellent"></span>Excellent</span>
+                                    <strong>45.2%</strong>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span><span class="status-indicator status-good"></span>Good</span>
+                                    <strong>26.3%</strong>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span><span class="status-indicator status-warning"></span>Fair</span>
+                                    <strong>18.9%</strong>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span><span class="status-indicator status-danger"></span>Poor</span>
+                                    <strong>9.6%</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parameter Analysis Row -->
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-4">
+                        <div class="chart-container">
+                            <h5 class="mb-3"><i class="bi bi-bar-chart me-2"></i>Parameter Analysis</h5>
+                            <canvas id="parameterChart" height="120"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="chart-container">
+                            <h5 class="mb-3"><i class="bi bi-geo-alt me-2"></i>Regional Quality Map</h5>
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <div class="p-3 bg-light rounded">
+                                        <h6 class="mb-1">North Region</h6>
+                                        <div class="progress mb-2" style="height: 8px;">
+                                            <div class="progress-bar bg-success" style="width: 85%"></div>
+                                        </div>
+                                        <small class="text-muted">85% Quality Score</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <div class="p-3 bg-light rounded">
+                                        <h6 class="mb-1">South Region</h6>
+                                        <div class="progress mb-2" style="height: 8px;">
+                                            <div class="progress-bar bg-info" style="width: 78%"></div>
+                                        </div>
+                                        <small class="text-muted">78% Quality Score</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <div class="p-3 bg-light rounded">
+                                        <h6 class="mb-1">East Region</h6>
+                                        <div class="progress mb-2" style="height: 8px;">
+                                            <div class="progress-bar bg-warning" style="width: 65%"></div>
+                                        </div>
+                                        <small class="text-muted">65% Quality Score</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <div class="p-3 bg-light rounded">
+                                        <h6 class="mb-1">West Region</h6>
+                                        <div class="progress mb-2" style="height: 8px;">
+                                            <div class="progress-bar bg-danger" style="width: 52%"></div>
+                                        </div>
+                                        <small class="text-muted">52% Quality Score</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Alerts and Blockchain Activity -->
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="chart-container">
+                            <h5 class="mb-3"><i class="bi bi-exclamation-triangle me-2"></i>Recent Alerts</h5>
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                                    <div>
+                                        <div class="d-flex align-items-center">
+                                            <span class="status-indicator status-warning me-2"></span>
+                                            <strong>High Turbidity Detected</strong>
+                                        </div>
+                                        <small class="text-muted">Station WS-001 • 2 hours ago</small>
+                                    </div>
+                                    <span class="badge bg-warning">Medium</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                                    <div>
+                                        <div class="d-flex align-items-center">
+                                            <span class="status-indicator status-danger me-2"></span>
+                                            <strong>pH Level Critical</strong>
+                                        </div>
+                                        <small class="text-muted">Station WS-007 • 4 hours ago</small>
+                                    </div>
+                                    <span class="badge bg-danger">High</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                                    <div>
+                                        <div class="d-flex align-items-center">
+                                            <span class="status-indicator status-good me-2"></span>
+                                            <strong>Quality Improved</strong>
+                                        </div>
+                                        <small class="text-muted">Station WS-003 • 6 hours ago</small>
+                                    </div>
+                                    <span class="badge bg-success">Resolved</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="chart-container">
+                            <h5 class="mb-3"><i class="bi bi-shield-check me-2"></i>Blockchain Activity</h5>
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                                    <div>
+                                        <strong>Data Validation Reward</strong>
+                                        <div><small class="text-muted">0x1a2b...3c4d • 0.05 ETH</small></div>
+                                    </div>
+                                    <span class="badge bg-success">+0.05 ETH</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                                    <div>
+                                        <strong>Quality Submission</strong>
+                                        <div><small class="text-muted">0x5e6f...7g8h • Validated</small></div>
+                                    </div>
+                                    <span class="badge bg-info">Confirmed</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                                    <div>
+                                        <strong>Penalty Applied</strong>
+                                        <div><small class="text-muted">0x9i0j...1k2l • Invalid data</small></div>
+                                    </div>
+                                    <span class="badge bg-warning">-0.01 ETH</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Update last updated time
+        document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+
+        // Quality Trend Chart
+        const trendCtx = document.getElementById('qualityTrendChart').getContext('2d');
+        const qualityTrendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Potable Water %',
+                    data: [72, 75, 68, 81, 79, 85, 88],
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Non-Potable Water %',
+                    data: [28, 25, 32, 19, 21, 15, 12],
+                    borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Quality Distribution Chart
+        const distributionCtx = document.getElementById('qualityDistributionChart').getContext('2d');
+        const qualityDistributionChart = new Chart(distributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Excellent', 'Good', 'Fair', 'Poor'],
+                datasets: [{
+                    data: [45.2, 26.3, 18.9, 9.6],
+                    backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#dc3545'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Parameter Analysis Chart
+        const parameterCtx = document.getElementById('parameterChart').getContext('2d');
+        const parameterChart = new Chart(parameterCtx, {
+            type: 'radar',
+            data: {
+                labels: ['pH', 'Hardness', 'Solids', 'Chloramines', 'Sulfate', 'Conductivity', 'Organic Carbon', 'Trihalomethanes', 'Turbidity'],
+                datasets: [{
+                    label: 'Average Quality Score',
+                    data: [85, 78, 82, 90, 75, 88, 79, 83, 86],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    pointBackgroundColor: '#667eea',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#667eea'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Function to update trend chart based on time period
+        function updateTrendChart(period) {
+            // Remove active class from all buttons
+            document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            
+            // Update chart data based on period (simplified for demo)
+            let newData, newLabels;
+            if (period === '7d') {
+                newLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                newData = [[72, 75, 68, 81, 79, 85, 88], [28, 25, 32, 19, 21, 15, 12]];
+            } else if (period === '30d') {
+                newLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                newData = [[74, 78, 82, 85], [26, 22, 18, 15]];
+            } else {
+                newLabels = ['Month 1', 'Month 2', 'Month 3'];
+                newData = [[76, 80, 84], [24, 20, 16]];
+            }
+            
+            qualityTrendChart.data.labels = newLabels;
+            qualityTrendChart.data.datasets[0].data = newData[0];
+            qualityTrendChart.data.datasets[1].data = newData[1];
+            qualityTrendChart.update();
+        }
+
+        // Animate counters on page load
+        function animateCounter(elementId, targetValue, suffix = '') {
+            const element = document.getElementById(elementId);
+            const startValue = 0;
+            const duration = 2000;
+            const startTime = performance.now();
+            
+            function updateCounter(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const currentValue = Math.floor(startValue + (targetValue - startValue) * progress);
+                
+                element.textContent = currentValue.toLocaleString() + suffix;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateCounter);
+                }
+            }
+            
+            requestAnimationFrame(updateCounter);
+        }
+
+        // Animate counters when page loads
+        window.addEventListener('load', () => {
+            animateCounter('totalSamples', 1247);
+            animateCounter('potableSamples', 892);
+            animateCounter('nonPotableSamples', 355);
+            animateCounter('avgAccuracy', 94.2, '%');
+        });
+    </script>
+</body>
+</html>
+

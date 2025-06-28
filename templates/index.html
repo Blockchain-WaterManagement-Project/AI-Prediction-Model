@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Quality Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.9), rgba(102, 16, 242, 0.9)), 
+                        url("{{ url_for('static', filename='background.jpg') }}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            color: rgb(241, 239, 251);
+        }
+        
+        .feature-card {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 1rem;
+            background: linear-gradient(135deg, #0d6efd, #6610f2);
+            color: rgb(236, 234, 244);
+        }
+        
+        .navbar-custom {
+            background: rgba(235, 235, 239, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-custom {
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stats-section {
+            background: #f8f9fa;
+            padding: 5rem 0;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #0d6efd;
+            margin-bottom: 0.5rem;
+        }
+        
+        .footer-custom {
+            background: #212529;
+            color: white;
+            padding: 3rem 0;
+        }
+        
+        .water-animation {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 1200 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z' fill='%23ffffff' opacity='.1'/%3E%3C/svg%3E");
+            background-size: cover;
+            background-repeat: no-repeat;
+            animation: wave 3s ease-in-out infinite;
+        }
+        
+        @keyframes wave {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(-25px); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" width="40" height="40" class="rounded-circle me-2">
+                <span class="fw-bold text-primary">Water Quality Management System</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('predict_quality') }}">Predict Quality</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-outline-primary ms-2" href="{{ url_for('login') }}">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-primary ms-2 text-white" href="{{ url_for('signup') }}">Sign Up</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <div class="animate__animated animate__fadeInLeft">
+                        <h1 class="display-4 fw-bold mb-4">
+                            Advanced Water Quality Management with AI
+                        </h1>
+                        <p class="lead mb-4">
+                            Harness the power of machine learning and blockchain technology to monitor, predict, and manage water quality with unprecedented accuracy and transparency.
+                        </p>
+                        <div class="d-flex flex-wrap gap-3">
+                            <a href="{{ url_for('signup') }}" class="btn btn-light btn-custom">
+                                <i class="bi bi-person-plus me-2"></i>Get Started
+                            </a>
+                            <a href="{{ url_for('predict_quality') }}" class="btn btn-outline-light btn-custom">
+                                <i class="bi bi-cpu me-2"></i>Try AI Prediction
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="animate__animated animate__fadeInRight">
+                        <img src="{{ url_for('static', filename='unsplash.jpg') }}" alt="Water Quality" class="img-fluid rounded-3 shadow-lg">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="water-animation"></div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center mb-5">
+                    <h2 class="display-5 fw-bold">Powerful Features</h2>
+                    <p class="lead text-muted">Comprehensive tools for water quality management</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card card h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon">
+                                <i class="bi bi-cpu"></i>
+                            </div>
+                            <h5 class="card-title">AI-Powered Predictions</h5>
+                            <p class="card-text">Advanced machine learning models with >90% accuracy for water quality assessment and prediction.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card card h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <h5 class="card-title">Blockchain Security</h5>
+                            <p class="card-text">Secure, transparent data validation with MetaMask integration for incentives and penalties.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card card h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                            <h5 class="card-title">Analytics Dashboard</h5>
+                            <p class="card-text">Comprehensive analytics and visualizations for data-driven decision making.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card card h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <h5 class="card-title">Multi-Role Access</h5>
+                            <p class="card-text">Tailored interfaces for users, government officials, and administrators.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card card h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon">
+                                <i class="bi bi-phone"></i>
+                            </div>
+                            <h5 class="card-title">Responsive Design</h5>
+                            <p class="card-text">Fully responsive interface that works seamlessly on all devices.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card card h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon">
+                                <i class="bi bi-cloud-upload"></i>
+                            </div>
+                            <h5 class="card-title">Real-time Data</h5>
+                            <p class="card-text">Real-time water quality data submission and validation system.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-item">
+                        <div class="stat-number" data-target="95">0</div>
+                        <h6>Accuracy Rate</h6>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-item">
+                        <div class="stat-number" data-target="1000">0</div>
+                        <h6>Data Points Analyzed</h6>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-item">
+                        <div class="stat-number" data-target="50">0</div>
+                        <h6>Active Users</h6>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-item">
+                        <div class="stat-number" data-target="24">0</div>
+                        <h6>Hours Monitoring</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h2 class="display-5 fw-bold mb-4">About SWUST Blockchain</h2>
+                    <p class="lead mb-4">
+                        SWUST AI and Blockchain Technology is a cutting-edge water quality management system that combines artificial intelligence, blockchain technology, and user-friendly interfaces to revolutionize how we monitor and manage water quality.
+                    </p>
+                    <p class="mb-4">
+                        Our platform enables users to submit water quality data, government officials to validate submissions, and administrators to oversee the entire system. With machine learning models achieving over 90% accuracy, we provide reliable predictions and insights for better water management decisions.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-custom">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                        </a>
+                        <a href="{{ url_for('signup') }}" class="btn btn-outline-primary btn-custom">
+                            <i class="bi bi-person-plus me-2"></i>Join Us
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="feature-card card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-droplet-fill text-primary fs-1"></i>
+                                    <h6 class="mt-2">Water Quality</h6>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="feature-card card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-gear-fill text-success fs-1"></i>
+                                    <h6 class="mt-2">AI Technology</h6>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="feature-card card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-shield-fill-check text-warning fs-1"></i>
+                                    <h6 class="mt-2">Blockchain</h6>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="feature-card card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-graph-up text-info fs-1"></i>
+                                    <h6 class="mt-2">Analytics</h6>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer-custom">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" width="40" height="40" class="rounded-circle me-2">
+                        <span class="fw-bold fs-4">SWUST Blockchain</span>
+                    </div>
+                    <p>Advanced water quality management with AI and blockchain technology.</p>
+                </div>
+                <div class="col-lg-2">
+                    <h6>Platform</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('predict_quality') }}" class="text-light text-decoration-none">Predict Quality</a></li>
+                        <li><a href="{{ url_for('login') }}" class="text-light text-decoration-none">Login</a></li>
+                        <li><a href="{{ url_for('signup') }}" class="text-light text-decoration-none">Sign Up</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2">
+                    <h6>Features</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-light text-decoration-none">AI Predictions</a></li>
+                        <li><a href="#" class="text-light text-decoration-none">Blockchain</a></li>
+                        <li><a href="#" class="text-light text-decoration-none">Analytics</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4">
+                    <h6>Contact</h6>
+                    <p>Get in touch with our team for support and inquiries.</p>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-light"><i class="bi bi-twitter fs-4"></i></a>
+                        <a href="#" class="text-light"><i class="bi bi-linkedin fs-4"></i></a>
+                        <a href="#" class="text-light"><i class="bi bi-github fs-4"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0">&copy; 2025 SWUST AI and Blockchain Technology. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">Built with SWUST AI and Blockchain Technology Team</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Animate numbers
+        function animateNumbers() {
+            const numbers = document.querySelectorAll('.stat-number');
+            numbers.forEach(number => {
+                const target = parseInt(number.getAttribute('data-target'));
+                const increment = target / 100;
+                let current = 0;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(timer);
+                    }
+                    number.textContent = Math.floor(current) + (target === 95 ? '%' : '+');
+                }, 20);
+            });
+        }
+        
+        // Intersection Observer for animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateNumbers();
+                    observer.unobserve(entry.target);
+                }
+            });
+        });
+        
+        observer.observe(document.querySelector('.stats-section'));
+        
+        // Add animation to feature cards
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.feature-card');
+            cards.forEach((card, index) => {
+                card.classList.add('animate__animated', 'animate__fadeInUp');
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+    </script>
+</body>
+</html>
+

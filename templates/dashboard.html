@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | AquaTrack Water Quality Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .dashboard-header {
+            background: linear-gradient(135deg, #0d6efd, #6610f2);
+            color: rgb(233, 232, 238);
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 1rem;
+        }
+        
+        .dashboard-card {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .quick-action-btn {
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: block;
+        }
+        
+        .quick-action-btn:hover {
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        .stats-number {
+            font-size: 2rem;
+            font-weight: 500;
+            color: #0d6efd;
+            margin-bottom: 0.5rem;
+        }
+        
+        .recent-activity {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .activity-item {
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+        }
+        
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1rem;
+        }
+        
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .prediction-widget {
+            background: linear-gradient(135deg, #0d6efd, #6610f2);
+            color: rgb(72, 44, 214);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .prediction-form {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .prediction-result {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-header {
+                padding: 1rem 0;
+            }
+            
+            .user-avatar {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Make container wider */
+.container-fluid {
+    max-width: 100% !important;
+}
+
+/* Make stats cards wider and better spaced */
+.stats-card {
+    min-width: 150px !important;
+    margin: 0 10px 20px 10px !important;
+}
+
+.chart-container {
+    min-width: 400px !important;
+    margin: 0 10px 20px 10px !important;
+}
+
+/* Responsive adjustments */
+@media (min-width: 1200px) {
+    .stats-card {
+        padding: 3rem 2rem !important;
+    }
+    
+    .stats-number {
+        font-size: 2rem !important;
+    }
+}
+        .stats-section {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.stats-section-title {
+    color: #2c3e50;
+    font-size: 1.7rem;
+    font-weight: 400;
+    margin-bottom: 2.5rem;
+    text-align: center;
+    position: relative;
+}
+
+.stats-section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(135deg, #0d6efd, #6610f2);
+    border-radius: 2px;
+}
+
+.stats-row {
+    margin-bottom: 3rem;
+    padding: 1.5rem 0;
+}
+
+.stats-row:last-child {
+    margin-bottom: 0;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #4d99e4, #e9ecef);
+    border-radius: 20px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    transition: all 0.4s ease;
+    border: 1px solid rgba(0,0,0,0.05);
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.stats-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+}
+
+.stats-number {
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: #0d6efd;
+    margin-bottom: 0.8rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    line-height: 1;
+}
+
+.stats-card.bg-success .stats-number,
+.stats-card.bg-danger .stats-number,
+.stats-card.bg-info .stats-number,
+.stats-card.bg-warning .stats-number,
+.stats-card.bg-primary .stats-number,
+.stats-card.bg-dark .stats-number {
+    color: rgb(64, 30, 202);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.stats-card .text-muted,
+.stats-card .text-white-50 {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: auto;
+}
+
+.chart-container {
+    background: rgb(243, 243, 245);
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+    border: 1px solid rgba(0,0,0,0.05);
+    min-height: 350px;
+}
+
+.chart-container h6 {
+    color: #495057;
+    font-weight: 500;
+    margin-bottom: 2rem;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.network-info {
+    background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-top: 2rem;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.network-info .alert {
+    border: none;
+    border-radius: 15px;
+    margin-bottom: 0;
+    padding: 1.2rem;
+    font-size: 1rem;
+}
+
+.section-subtitle {
+    color: #6c757d;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 2rem;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" width="40" height="40" class="rounded-circle me-2">
+                <span class="fw-bold text-primary">Water Quality Management System</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}"><i class="bi bi-house me-1"></i>Home</a>
+                    </li>
+                    {% if role == 'user' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('create_water_data') }}"><i class="bi bi-plus-circle me-1"></i>Submit Data</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('view_water_data') }}"><i class="bi bi-table me-1"></i>My Data</a>
+                    </li>
+                    {% elif role == 'government' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('validate_data') }}"><i class="bi bi-check-circle me-1"></i>Validate Data</a>
+                    </li>
+                    {% elif role == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('manage_users') }}"><i class="bi bi-people me-1"></i>Manage Users</a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle me-1"></i>{{ username }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <div>
+                            <h1 class="mb-0">Welcome back, {{ username }}!</h1>
+                            <p class="mb-0 opacity-75">
+                                {% if role == 'user' %}
+                                    Water Quality Data Contributor
+                                {% elif role == 'government' %}
+                                    Government Official - Data Validator
+                                {% elif role == 'admin' %}
+                                    System Administrator
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="text-white-50">
+                        <i class="bi bi-calendar me-1"></i>
+                        <span id="currentDate"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid px-4">
+        {% if role == 'user' %}
+        <!-- User Dashboard -->
+        <div class="row">
+            <!-- Quick Actions -->
+            <div class="col-lg-4">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-lightning me-2"></i>Quick Actions</h5>
+                        <a href="{{ url_for('create_water_data') }}" class="quick-action-btn btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Submit Water Data
+                        </a>
+                        <a href="{{ url_for('view_water_data') }}" class="quick-action-btn btn btn-outline-primary">
+                            <i class="bi bi-table me-2"></i>View My Data
+                        </a>
+                        <a href="{{ url_for('blockchain_transactions') }}" class="quick-action-btn btn btn-outline-primary">
+                            <i class="bi bi-link-45deg me-2"></i>View Blockchain Transactions
+                        </a>
+                        <a href="#" class="quick-action-btn btn btn-outline-secondary" onclick="showPredictionWidget()">
+                            <i class="bi bi-calculator me-2"></i>Predict Quality
+                        </a>
+                    </div>
+                </div>
+
+                {% if role == 'user' %}
+<div class="card dashboard-card">
+    <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-wallet2 me-2"></i>Wallet Management</h5>
+        {% if not wallet_address %}
+        <div class="alert alert-warning mb-3">
+           <i class="bi bi-exclamation-triangle me-2"></i>
+           <strong>Important:</strong> You need to set your wallet address to receive validation rewards. Please connect your wallet below.
+        </div>
+        {% endif %}
+        <div class="wallet-info mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span>Current Wallet:</span>
+                <span id="currentWallet" class="text-muted" data-full-address="{{ wallet_address }}">
+                    {% if wallet_address %}
+                        {{ wallet_address[:6] }}...{{ wallet_address[-4:] }}
+                    {% else %}
+                        Not set
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="connectWallet()">
+            <i class="bi bi-wallet2 me-2"></i>Connect Wallet
+        </button>
+        <button class="btn btn-outline-primary ms-2" onclick="updateWalletAddress()">
+            <i class="bi bi-arrow-repeat me-2"></i>Update Address
+        </button>
+    </div>
+</div>
+
+<script>
+async function connectWallet() {
+    try {
+        if (typeof window.ethereum === 'undefined') {
+            alert('Please install MetaMask to connect your wallet');
+            return;
+        }
+
+        // Request account access
+        const accounts = await window.ethereum.request({ 
+            method: 'eth_requestAccounts',
+            params: []
+        });
+        
+        if (!accounts || accounts.length === 0) {
+            throw new Error('No accounts found. Please unlock MetaMask.');
+        }
+        
+        const walletAddress = accounts[0];
+        
+        // Update UI
+        const walletElement = document.getElementById('currentWallet');
+        walletElement.textContent = walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4);
+        walletElement.setAttribute('data-full-address', walletAddress);
+            
+        // Save to server
+        await updateWalletAddress(walletAddress);
+        
+    } catch (error) {
+        console.error('Wallet connection error:', error);
+        if (error.code === 4001) {
+            // User rejected the connection
+            alert('Please connect your wallet to continue.');
+        } else {
+            alert('Error connecting wallet: ' + error.message);
+        }
+    }
+}
+
+async function updateWalletAddress(address) {
+    try {
+        let walletAddress;
+        if (address) {
+            // If address is provided directly (from connectWallet), use it
+            walletAddress = address;
+        } else {
+            // If called from the Update Address button, request a new connection
+            if (typeof window.ethereum === 'undefined') {
+                alert('Please install MetaMask to update your wallet address');
+                return;
+            }
+
+            // Request new account access
+            const accounts = await window.ethereum.request({ 
+                method: 'eth_requestAccounts',
+                params: []
+            });
+            
+            if (!accounts || accounts.length === 0) {
+                throw new Error('No accounts found. Please unlock MetaMask.');
+            }
+            
+            walletAddress = accounts[0];
+            
+            // Update UI with new address
+            const walletElement = document.getElementById('currentWallet');
+            walletElement.textContent = walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4);
+            walletElement.setAttribute('data-full-address', walletAddress);
+        }
+
+        if (!walletAddress || walletAddress === 'Not set') {
+            alert('Please connect your wallet first');
+            return;
+        }
+
+        const response = await fetch('/update_wallet_address', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                wallet_address: walletAddress
+            }),
+            credentials: 'same-origin'
+        });
+
+        // Check if the response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('Server returned non-JSON response. Please try again.');
+        }
+
+        const result = await response.json();
+        
+        if (result.error) {
+            throw new Error(result.error);
+        }
+        
+        alert('Wallet address updated successfully!');
+        window.location.reload();
+        
+    } catch (error) {
+        console.error('Error updating wallet address:', error);
+        if (error.message.includes('non-JSON response')) {
+            alert('Session may have expired. Please try logging in again.');
+            window.location.href = '/login';
+        } else {
+            alert('Error updating wallet address: ' + error.message);
+        }
+    }
+}
+</script>
+{% endif %}
+                
+                <!-- Stats -->
+
+<div class="stats-section">
+    <h5 class="stats-section-title">
+        <i class="bi bi-graph-up me-3"></i>My Statistics Dashboard
+    </h5>
+    
+    <!-- Basic Stats Row -->
+    <div class="stats-row">
+        <h6 class="section-subtitle">📊 Data Overview</h6>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="stats-card">
+                    <div class="stats-number" id="userDataCount">-</div>
+                    <div class="text-muted">Total Data Entries</div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="stats-card">
+                    <div class="stats-number" id="userValidatedCount">-</div>
+                    <div class="text-muted">Validated Entries</div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="stats-card">
+                    <div class="stats-number" id="userPendingCount">-</div>
+                    <div class="text-muted">Pending Validation</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Transaction Stats Row -->
+    <div class="stats-row">
+        <h6 class="section-subtitle">💼 Transaction Summary</h6>
+        <div class="row">
+            <div class="col-md-3 mb-4">
+                <div class="stats-card bg-success text-white">
+                    <div class="stats-number" id="incentiveCount">-</div>
+                    <div class="text-white-50">Incentives Received</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="stats-card bg-danger text-white">
+                    <div class="stats-number" id="penaltyCount">-</div>
+                    <div class="text-white-50">Penalties Applied</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="stats-card bg-info text-white">
+                    <div class="stats-number" id="validationCount">-</div>
+                    <div class="text-white-50">Validations</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="stats-card bg-warning text-white">
+                    <div class="stats-number" id="totalTransactions">-</div>
+                    <div class="text-white-50">Total Transactions</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Financial Stats Row -->
+    <div class="stats-row">
+        <h6 class="section-subtitle">💰 Financial Overview</h6>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="stats-card bg-success text-white">
+                    <div class="stats-number" id="totalIncentives">-</div>
+                    <div class="text-white-50">Total Incentives (ETH)</div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="stats-card bg-danger text-white">
+                    <div class="stats-number" id="totalPenalties">-</div>
+                    <div class="text-white-50">Total Penalties (ETH)</div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="stats-card bg-primary text-white">
+                    <div class="stats-number" id="netRewards">-</div>
+                    <div class="text-white-50">Net Rewards (ETH)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Blockchain Stats Row -->
+    <div class="stats-row">
+        <h6 class="section-subtitle">🔗 Blockchain Activity</h6>
+        <div class="row">
+            <div class="col-md-3 mb-4">
+                <div class="stats-card bg-dark text-white">
+                    <div class="stats-number" id="blockchainTransactions">-</div>
+                    <div class="text-white-50">Blockchain TX</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="stats-card bg-success text-white">
+                    <div class="stats-number" id="completedTransactions">-</div>
+                    <div class="text-white-50">Completed</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="stats-card bg-warning text-white">
+                    <div class="stats-number" id="pendingTransactions">-</div>
+                    <div class="text-white-50">Pending</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="stats-card bg-danger text-white">
+                    <div class="stats-number" id="failedTransactions">-</div>
+                    <div class="text-white-50">Failed</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="stats-row">
+        <h6 class="section-subtitle">📈 Visual Analytics</h6>
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="chart-container">
+                    <h6 class="mb-3">Transaction Types Distribution</h6>
+                    <canvas id="transactionTypeChart" height="250"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="chart-container">
+                    <h6 class="mb-3">Transaction Status Overview</h6>
+                    <canvas id="transactionStatusChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Network Info -->
+    <div class="network-info">
+        <h6 class="section-subtitle">🌐 Network Information</h6>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="alert alert-info">
+                    <i class="bi bi-wallet2 me-2"></i>
+                    <strong>Wallet Status:</strong> 
+                    <span id="walletConnected" class="ms-2">-</span>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="alert alert-info">
+                    <i class="bi bi-link-45deg me-2"></i>
+                    <strong>Network:</strong> 
+                    <span id="blockchainType" class="ms-2">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Prediction Widget -->
+                <div class="prediction-widget" id="predictionWidget" style="display: none;">
+                    <h4><i class="bi bi-calculator me-2"></i>Water Quality Prediction</h4>
+                    <p>Enter water parameters to get an AI-powered quality prediction</p>
+                    
+                    <div class="prediction-form">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="ph" step="0.01" placeholder="pH">
+                                    <label for="ph">pH Level</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="color" step="0.01" placeholder="Color">
+                                    <label for="color">Color (NTU)</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="acidity" step="0.01" placeholder="Acidity">
+                                    <label for="acidity">Acidity</label>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-light" onclick="makePrediction()">
+                            <i class="bi bi-cpu me-2"></i>Predict Quality
+                        </button>
+                    </div>
+                    
+                    <div class="prediction-result" id="predictionResult">
+                        <h6>Prediction Result:</h6>
+                        <div id="predictionOutput"></div>
+                    </div>
+                </div>
+                
+                <!-- Recent Activity -->
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-clock-history me-2"></i>Recent Activity</h5>
+                        <div class="recent-activity" id="recentActivity">
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-hourglass-split fs-1"></i>
+                                <p>Loading recent activity...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% elif role == 'government' %}
+        <!-- Government Dashboard -->
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-shield-check me-2"></i>Validation Actions</h5>
+                        <a href="{{ url_for('validate_data') }}" class="quick-action-btn btn btn-warning">
+                            <i class="bi bi-check-circle me-2"></i>Validate Data
+                        </a>
+                        <button class="quick-action-btn btn btn-outline-info" onclick="checkBlockchainStatus()">
+                            <i class="bi bi-link-45deg me-2"></i>Blockchain Status
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-bar-chart me-2"></i>Validation Stats</h5>
+                        <div class="stats-card">
+                            <div class="stats-number" id="pendingValidation">-</div>
+                            <div class="text-muted">Pending Validation</div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-number" id="validatedByMe">-</div>
+                            <div class="text-muted">Validated by Me</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-8">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-list-check me-2"></i>Pending Validations</h5>
+                        <div id="pendingValidationsList">
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-hourglass-split fs-1"></i>
+                                <p>Loading pending validations...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% elif role == 'admin' %}
+        <!-- Admin Dashboard -->
+        <div class="row">
+            <div class="col-lg-3">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-gear me-2"></i>Admin Actions</h5>
+                        <a href="{{ url_for('manage_users') }}" class="quick-action-btn btn btn-danger">
+                            <i class="bi bi-people me-2"></i>Manage Users
+                        </a>
+                        <button class="quick-action-btn btn btn-outline-info" onclick="viewSystemStats()">
+                            <i class="bi bi-graph-up me-2"></i>System Analytics
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-9">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-number" id="totalUsers">-</div>
+                            <div class="text-muted">Total Users</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-number" id="totalWaterData">-</div>
+                            <div class="text-muted">Water Data Entries</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-number" id="validatedData">-</div>
+                            <div class="text-muted">Validated Data</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-number" id="pendingData">-</div>
+                            <div class="text-muted">Pending Data</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-activity me-2"></i>System Overview</h5>
+                        <div id="systemOverview">
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-hourglass-split fs-1"></i>
+                                <p>Loading system overview...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+
+        // Set current date
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        // Load dashboard statistics
+        async function loadDashboardStats() {
+    try {
+        const response = await fetch('/api/dashboard_stats');
+        const stats = await response.json();
+
+        // Set numbers
+        [
+            'userDataCount', 'userValidatedCount', 'userPendingCount',
+            'incentiveCount', 'penaltyCount', 'validationCount', 'totalTransactions',
+            'totalIncentives', 'totalPenalties', 'netRewards',
+            'blockchainTransactions', 'completedTransactions', 'pendingTransactions', 'failedTransactions',
+            'walletConnected', 'blockchainType'
+        ].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && stats[id] !== undefined) {
+                el.textContent = stats[id];
+            }
+        });
+
+        // Transaction Types Chart
+        if (window.transactionTypeChart) window.transactionTypeChart.destroy();
+        const typeCtx = document.getElementById('transactionTypeChart').getContext('2d');
+        window.transactionTypeChart = new Chart(typeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Incentives', 'Penalties', 'Validations'],
+                datasets: [{
+                    data: [
+                        stats.incentiveCount || 0,
+                        stats.penaltyCount || 0,
+                        stats.validationCount || 0
+                    ],
+                    backgroundColor: ['#198754', '#dc3545', '#0dcaf0']
+                }]
+            },
+            options: {
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+
+        // Transaction Status Chart
+        if (window.transactionStatusChart) window.transactionStatusChart.destroy();
+        const statusCtx = document.getElementById('transactionStatusChart').getContext('2d');
+        window.transactionStatusChart = new Chart(statusCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Completed', 'Pending', 'Failed'],
+                datasets: [{
+                    data: [
+                        stats.completedTransactions || 0,
+                        stats.pendingTransactions || 0,
+                        stats.failedTransactions || 0
+                    ],
+                    backgroundColor: ['#198754', '#ffc107', '#dc3545']
+                }]
+            },
+            options: {
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+    }
+}
+        
+        // Show prediction widget
+        function showPredictionWidget() {
+            const widget = document.getElementById('predictionWidget');
+            widget.style.display = widget.style.display === 'none' ? 'block' : 'none';
+            if (widget.style.display === 'block') {
+                widget.classList.add('animate__animated', 'animate__fadeIn');
+            }
+        }
+        
+        // Make prediction
+        async function makePrediction() {
+            const ph = document.getElementById('ph').value;
+            const color = document.getElementById('color').value;
+            const acidity = document.getElementById('acidity').value;
+            
+            if (!ph || !color || !acidity) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ph: parseFloat(ph),
+                        color: parseFloat(color),
+                        acidity: parseFloat(acidity)
+                    })
+                });
+                
+                const result = await response.json();
+                const resultDiv = document.getElementById('predictionResult');
+                const outputDiv = document.getElementById('predictionOutput');
+                
+                if (result.error) {
+                    outputDiv.innerHTML = `<div class="alert alert-danger">${result.error}</div>`;
+                } else {
+                    const potable = result.prediction === 1;
+                    const confidence = (result.confidence * 100).toFixed(1);
+                    
+                    outputDiv.innerHTML = `
+                        <div class="alert ${potable ? 'alert-success' : 'alert-warning'}">
+                            <h6><i class="bi bi-${potable ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                            Water is ${potable ? 'POTABLE' : 'NOT POTABLE'}</h6>
+                            <p class="mb-0">Confidence: ${confidence}%</p>
+                        </div>
+                    `;
+                }
+                
+                resultDiv.style.display = 'block';
+                resultDiv.classList.add('animate__animated', 'animate__fadeIn');
+            } catch (error) {
+                console.error('Error making prediction:', error);
+                alert('Error making prediction. Please try again.');
+            }
+        }
+        
+        // Check blockchain status
+        function checkBlockchainStatus() {
+            // Placeholder for blockchain status check
+            alert('Blockchain Status: Connected to Ethereum Mainnet\nLast Block: #' + Math.floor(Math.random() * 1000000));
+        }
+        
+        // View system stats
+        function viewSystemStats() {
+            // Placeholder for system analytics
+            alert('System Analytics:\n- Uptime: 99.9%\n- Active Users: 1,234\n- Data Processed: 45,678 entries');
+        }
+        
+        // Load dashboard data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardStats();
+            
+            // Add animation to cards
+            const cards = document.querySelectorAll('.dashboard-card');
+            cards.forEach((card, index) => {
+                card.classList.add('animate__animated', 'animate__fadeInUp');
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+    </script>
+
+</body>
+</html>
+
